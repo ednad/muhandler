@@ -50,8 +50,8 @@ c_base_url              = None
 
 options = None          # gunicorn service options
 debug   = False         # service debug level messages
-timing  = False         # minimal elapsed time for request processing
-verbose = True          # service level messages (high level and minimal)
+timing  = False         # elapsed time for request processing (minimal output)
+verbose = True          # service level messages (high level and minimal output)
 
 class handler_config():
 
