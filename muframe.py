@@ -11,6 +11,7 @@ from simplejson.compat import StringIO
 import yaml
 import datetime as dt
 import sys, io, gzip
+from os import listdir
 from werkzeug.wrappers import Response
 
 KEY_SERVICE = "service"
@@ -27,9 +28,9 @@ BAD_REQUEST_500 = '500 Internal Server Error'
 BAD_REQUEST_502 = '502 Bad Gateway'
 
 # service configuration file and internal variables
-c_wsgi_url              = None
-c_wsgi_port             = None
-c_wsgi_timeout          = None
+c_server_host           = None
+c_server_port           = None
+c_server_timeout        = None
 c_preload_on_start      = None
 
 c_data_root             = None
@@ -46,9 +47,9 @@ verbose = True          # service level messages (high level and minimal)
 
 class handler_config():
 
-    wsgi_url              = None
-    wsgi_port             = None
-    wsgi_timeout          = None
+    server_host           = None
+    server_port           = None
+    server_timeout        = None
     data_root             = None
     data_folder           = None
     uframe_url            = None
@@ -77,14 +78,14 @@ class handler_config():
             raise Exception(err.message)
 
         # muframe service, data and uframe settings
-        self.wsgi_url         = settings[root]['wsgi_server']['url']
-        self.wsgi_port        = settings[root]['wsgi_server']['port']
-        self.wsgi_timeout     = settings[root]['wsgi_server']['timeout']
-        self.preload_on_start = settings[root]['wsgi_server']['preload']
-        self.data_root       = settings[root]['data_root']
-        self.data_folder     = settings[root]['data_folder']
-        self.uframe_url      = settings[root]['uframe_url']
-        self.uframe_url_root = settings[root]['uframe_url_root']
+        self.server_host      = settings[root]['server']['host']
+        self.server_port      = settings[root]['server']['port']
+        self.server_timeout   = settings[root]['server']['timeout']
+        self.preload_on_start = settings[root]['server']['preload']
+        self.data_root        = settings[root]['data_root']
+        self.data_folder      = settings[root]['data_folder']
+        self.uframe_url       = settings[root]['uframe_url']
+        self.uframe_url_root  = settings[root]['uframe_url_root']
         self.uframe_timeout_connect = settings[root]['uframe_timeout_connect']
         self.uframe_timeout_read    = settings[root]['uframe_timeout_read']
         self.base_url = self.uframe_url + self.uframe_url_root
@@ -110,22 +111,38 @@ class manage_store_status():
             if value not in self._filenames:
                 self._filenames.append(value)
 
+    def set_store_status(self):
+        '''
+        get filenames from data folder (no hidden files), populate list of filenames and update file count.
+        Useful when preload is set to False.
+        '''
+        try:
+            path = c_data_root + '/' + c_data_folder
+            onlyfiles = [f for f in listdir(path) if not f.startswith('.')]
+            file_list = [ f for f in onlyfiles]
+            self._filenames = file_list
+            self._file_count = len(file_list)
+        except Exception, err:
+            raise Exception(err.message)
+
+        return
+
 def print_config_values():
     '''
-    debug for use on startup
+    for use on startup
     '''
     print '\n-------- config values:'
-    print '             wsgi_port: %s' % c_wsgi_port                  # service port
-    print '              wsgi_url: %s' % c_wsgi_url                   # service host url
-    print '          wsgi_timeout: %s' % c_wsgi_timeout               # service worker timeout
-    print '      preload_on_start: %s' % c_preload_on_start           # service (on start) preload data
-    print '             data_root: %s' % c_data_root                  # location where data folder is located
-    print '           data_folder: %s' % c_data_folder                # name of folder where data is stored
-    print 'uframe_timeout_connect: %s' % c_uframe_timeout_connect     # connect timeout (should be greater than 3 secs)
-    print '   uframe_timeout_read: %s' % c_uframe_timeout_read        # read timeout (adjust to accommodate latency)
-    print '            uframe_url: %s' % c_uframe_url                 # uframe url
-    print '       uframe_url_root: %s' % c_uframe_url_root            # uframe root
-    print '             *base_url: %s' % c_base_url                   # complete url (uframe_url + uframe_root)
+    print '           server_port: %s' % c_server_port             # service port
+    print '           server_host: %s' % c_server_host             # service host url
+    print '        server_timeout: %s' % c_server_timeout          # service worker timeout
+    print '               preload: %s' % c_preload_on_start        # service (on start) preload data
+    print '             data_root: %s' % c_data_root               # location where data folder is located
+    print '           data_folder: %s' % c_data_folder             # name of folder where data is stored
+    print 'uframe_timeout_connect: %s' % c_uframe_timeout_connect  # connect timeout (should be greater than 3 secs)
+    print '   uframe_timeout_read: %s' % c_uframe_timeout_read     # read timeout (adjust to accommodate latency)
+    print '            uframe_url: %s' % c_uframe_url              # uframe url
+    print '       uframe_url_root: %s' % c_uframe_url_root         # uframe root
+    print '             *base_url: %s' % c_base_url                # complete url (uframe_url + uframe_root)
     print '----------------------\n'
     return
 
@@ -268,7 +285,7 @@ def get_uframe_moorings():
 
 def get_uframe_platforms(mooring):
     '''
-    Lists all the streams
+    Lists all the platforms
     '''
     try:
         url = c_base_url + '/' + mooring
@@ -280,7 +297,7 @@ def get_uframe_platforms(mooring):
 
 def get_uframe_instruments(mooring, platform):
     '''
-    Lists all the streams
+    Lists all the instruments for a platform
     '''
     try:
         filename = '_'.join([mooring, platform])
@@ -293,7 +310,7 @@ def get_uframe_instruments(mooring, platform):
 
 def get_uframe_stream_types(mooring, platform, instrument):
     '''
-    Lists all the streams
+    Lists all the stream types for an instrument
     '''
     try:
         filename = '_'.join([mooring, platform, instrument])
@@ -306,7 +323,7 @@ def get_uframe_stream_types(mooring, platform, instrument):
 
 def get_uframe_streams(mooring, platform, instrument, stream_type):
     '''
-    Lists all the streams
+    Lists all the streams (all types) for an instrument
     '''
     try:
         filename = '_'.join([mooring, platform, instrument, stream_type])
@@ -319,7 +336,7 @@ def get_uframe_streams(mooring, platform, instrument, stream_type):
 
 def get_uframe_stream(mooring, platform, instrument, stream):
     '''
-    Lists the reference designators for the streams
+    Lists the reference designators for the stream (* data not available)
     '''
     try:
         filename = '_'.join([mooring, platform, instrument, stream])
@@ -332,7 +349,7 @@ def get_uframe_stream(mooring, platform, instrument, stream):
 
 def get_uframe_stream_metadata(mooring, platform, instrument, stream):
     '''
-    Returns the uFrame metadata response for a given stream
+    Returns the uFrame metadata response for a given stream (* data not available)
     '''
     try:
         filename = '_'.join([mooring, platform, instrument, stream, 'metadata'])
@@ -345,7 +362,7 @@ def get_uframe_stream_metadata(mooring, platform, instrument, stream):
 
 def get_uframe_stream_contents(mooring, platform, instrument, stream_type, stream):
     '''
-    Gets the stream contents
+    Gets the stream contents for a given stream
     '''
     try:
         filename = '_'.join([mooring, platform, instrument, stream_type, stream])
@@ -408,7 +425,6 @@ def handler_app(environ, start_response):
             start_response(OK_200, CONTENT_TYPE_TEXT)
             return format_json(output)
 
-    # TODO Prepare headers once on initialization, not every time
     # Prepare basic headers for all responses
     dict_zip_header = {'access-control-expose-headers': '[]', 'content-encoding': 'gzip', 'access-control-allow-credentials': 'false', 'access-control-allow-origin': '*', 'content-type': 'application/json'}
     zip_header = []
@@ -692,7 +708,7 @@ def handler_app(environ, start_response):
     # key not known (e.g. not 'service=' or 'uframe=')
     else:
         input_str='{ Error: unknown key provided in request: %s } ' % request
-        print 'Error: Error: unknown key provided in request: \'%s\' ' % request
+        if debug: print 'Error: unknown key provided in request: \'%s\' ' % request
         start_response(OK_200, CONTENT_TYPE_TEXT)
         return format_json(input_str)
 
@@ -720,10 +736,10 @@ if __name__ == '__main__':
         '''
         store_status = manage_store_status()
         util = handler_config()
-        c_wsgi_port       = util.wsgi_port
-        c_wsgi_url        = util.wsgi_url
-        c_wsgi_timeout    = 30                      # set default, override if config value acceptable
-        _wsgi_timeout     = util.wsgi_timeout       # worker timeout config value
+        c_server_port     = util.server_port
+        c_server_host     = util.server_host
+        c_server_timeout  = 30                      # set default, override if config value acceptable
+        _server_timeout   = util.server_timeout       # worker timeout config value
         c_data_root       = util.data_root
         c_data_folder     = util.data_folder
         c_uframe_url      = util.uframe_url
@@ -734,12 +750,12 @@ if __name__ == '__main__':
         c_preload_on_start= util.preload_on_start
 
         # set default worker timeout (seconds); verify worker timeout value in config is int and GE 30;
-        if _wsgi_timeout:
-            if type(_wsgi_timeout) == type(1):
-                if _wsgi_timeout < 30:
-                    c_wsgi_timeout = 30
+        if _server_timeout:
+            if type(_server_timeout) == type(1):
+                if _server_timeout < 30:
+                    c_server_timeout = 30
                 else:
-                    c_wsgi_timeout = _wsgi_timeout
+                    c_server_timeout = _server_timeout
             else:
                 raise Exception('config variable \'timeout\' must be an integer')
 
@@ -748,8 +764,8 @@ if __name__ == '__main__':
         if type(c_uframe_timeout_read) != type(1):
             raise Exception('config variable \'uframe_timeout_read\' must be an integer')
 
-        # Verify service_url and port are not None
-        if not c_wsgi_url or not c_wsgi_port:
+        # Verify service_host and port are not None
+        if not c_server_host or not c_server_port:
             raise Exception('Service host url and port must have values defined in configuration yml')
 
         # Verify c_data_root and c_data_folder are provided and exist
@@ -760,9 +776,9 @@ if __name__ == '__main__':
 
         # set options for service instance; note service name 'muframe'
         options = {
-                'bind': '%s:%s' % (str(c_wsgi_url), str(c_wsgi_port)),
+                'bind': '%s:%s' % (str(c_server_host), str(c_server_port)),
                 'workers': number_of_workers(),
-                'timeout': c_wsgi_timeout,
+                'timeout': c_server_timeout,
                 'proc_name': 'muframe'
             }
         if debug == True: print_config_values()
@@ -771,6 +787,11 @@ if __name__ == '__main__':
         # Note if True, this delays availability of server until preload completes
         if c_preload_on_start:
             preload_data()
+        else:
+            # Get store status, verify data_folder has content else return error
+            store_status.set_store_status()
+            if store_status.get_file_count() == 0 or not store_status.get_filenames():
+                raise Exception('Enable preload in configuration file; data folder is empty')
 
         # Start server
         StandaloneApplication(handler_app, options).run()

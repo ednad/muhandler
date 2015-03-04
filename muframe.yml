@@ -6,8 +6,8 @@ muframe:
   uframe_timeout_connect: 5             # connect timeout (should be greater than 3 secs)
   uframe_timeout_read: 30               # read timeout (adjust to accommodate latency)
 
-  wsgi_server:             # muframe service settings
-    url:      127.0.0.1    # service host url
+  server:                  # muframe service settings
+    host:     127.0.0.1    # service host
     port:     7090         # service port
     timeout:  60           # service worker timeout (default=30)
-    preload:  True         # preload data on server start
+    preload:  False        # preload data on server start

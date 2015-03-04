@@ -5,7 +5,7 @@ Ocean Observatories Initiative - User Interface routes support service for uFram
 
 Brief gunicorn service supporting requests for uframe routes from OOI UI Flask App
 
-## Service endpoints
+### Service endpoints
 The WSGI service endpoints are listed and defined below:
 
     /service=alive                              # service= request is operational
