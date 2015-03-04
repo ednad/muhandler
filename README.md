@@ -75,8 +75,9 @@ Exercise muframe service request(s) by using a web browser and navigating to:
 
     http://localhost:5000/#
 
-    Log into OOI UI, navigate TOC to 'Coastal Pioneer Central Offshore Platform Mooring'
-            wire-following profiler data.
+    Log into OOI UI
+
+    Navigate within TOC to 'Coastal Pioneer Central Offshore Platform Mooring' wire-following profiler data.
 
 
 ### Trouble Shooting
