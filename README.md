@@ -8,21 +8,23 @@ Brief gunicorn service supporting requests for uframe routes from OOI UI Flask A
 ## Service endpoints
 The WSGI service endpoints are listed and defined below:
 
-    /service=alive                  # service= request is operational
-    /service=/sensor/inv            # service= request is operational and data stores are populated
-    /uframe=alive                   # uframe=  request is operational
-    /uframe=/sensor/inv             # uframe=  request is operational and can connect to the uFrame server
+    /service=alive                              # service= request is operational
+    /service=/sensor/inv                        # service= request uFrame data from store
+    /service=/sensor/inv/valid_uframe_request   # service= request uFrame data from store
+    /uframe=alive                               # uframe=  request is operational
+    /uframe=/sensor/inv                         # uframe=  request uFrame data directly (without use of store)
+    /uframe=/sensor/inv/valid_uframe_request    # uframe=  request uFrame data directly (without use of store)
 
 
 ### Configuration
-Be sure to edit your `muframe.yml` file to the correct host(s), port(s), URL(s) and data root and folders.
+Be sure to edit your `muframe.yml` file to the correct host(s), port(s), data root and folders.
 
 Verify the configuration for configuration variables data_root and data_folder exist and have write access:
 
     data_root: '..'                         # directory where data_folder is located; ensure this directory exists
     data_folder: 'data'                     # folder where data is stored; ensure this folder exists
-    uframe_url: 'http://localhost:12575'    # uframe server url
-    uframe_url_root: '/sensor/inv'          # ensure this is the same as OOI UI services UFRAME_URL_BASE config value
+    uframe_url: 'http://localhost:12575'    # uFrame server url
+    uframe_url_root: '/sensor/inv'          # ensure same value as OOI UI services UFRAME_URL_BASE config value
 
 ### Service setup
 Ensure you have the following:
@@ -62,7 +64,7 @@ Exercise service request(s) by using a web browser and navigating to:
     http://localhost:7090/uframe=/sensor/inv/CP02PMCO/SBS01/01-MOPAK0000/telemetered/mopak_o_dcl_accel
 
 ### Configure for use with OOI UI
-Verify OOI UI is operational. Stop OOI UI services; edit OOI UI services config.yml variables for your environment:
+Verify OOI UI is operational. Stop OOI UI services; edit OOI UI services config.yml for your environment:
 
         UFRAME_URL: 'http://localhost:7090/service='  # Retain current setting for reference
         UFRAME_URL_BASE: '/sensor/inv'                # Ensure same as muframe 'uframe_url_root' config variable.
@@ -73,7 +75,8 @@ Exercise muframe service request(s) by using a web browser and navigating to:
 
     http://localhost:5000/#
 
-    Log into OOI UI, navigate TOC to 'Coastal Pioneer Central Offshore Platform Mooring' wire-following profiler data.
+    Log into OOI UI, navigate TOC to 'Coastal Pioneer Central Offshore Platform Mooring'
+            wire-following profiler data.
 
 
 ### Trouble Shooting
