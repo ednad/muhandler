@@ -1,0 +1,13 @@
+muframe:
+  data_root: '..'                       # directory where data_folder is located
+  data_folder: 'data'                   # folder where data is stored; ensure this folder exists
+  uframe_url: 'http://localhost:12575'  # uframe server url
+  uframe_url_root: '/sensor/inv'        # uframe url root
+  uframe_timeout_connect: 5             # connect timeout (should be greater than 3 secs)
+  uframe_timeout_read: 30               # read timeout (adjust to accommodate latency)
+
+  wsgi_server:             # muframe service settings
+    url:      127.0.0.1    # service host url
+    port:     7090         # service port
+    timeout:  60           # service worker timeout (default=30)
+    preload:  True         # preload data on server start
