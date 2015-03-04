@@ -2,6 +2,13 @@
 
 from __future__ import unicode_literals
 
+"""
+@package muframe
+@file muframe.py
+@author Edna Donoughe (based on work of James Case)
+@Brief gunicorn service supporting requests for uframe routes from OOI UI Flask App
+"""
+
 import multiprocessing
 import gunicorn.app.base, requests
 from gunicorn.six import iteritems
@@ -42,7 +49,8 @@ c_uframe_timeout_read   = None
 c_base_url              = None
 
 options = None          # gunicorn service options
-debug   = False         # service debug level messages (always turn off/remove for production)
+debug   = False         # service debug level messages
+timing  = False         # minimal elapsed time for request processing
 verbose = True          # service level messages (high level and minimal)
 
 class handler_config():
@@ -184,7 +192,6 @@ def preload_data():
     Use config settings data_root and data_folder to target storage location.
     '''
     if verbose: print '\nStart data preload ....'
-
     try:
         response = get_uframe_moorings()
         if response.status_code != 200:
@@ -259,13 +266,12 @@ def preload_data():
 
             write_store(filename,response.content)
 
-        if verbose: print ' - Number of preloaded files: %s ' % store_status.get_file_count()
+        if verbose:
+            print ' - Number of preloaded files: %s ' % store_status.get_file_count()
+            print 'Completed data preload ....\n'
 
     except Exception, err:
-        if debug: print 'error: %s' % err.message
         raise Exception('%s' % err.message)
-
-    if verbose: print 'Completed data preload ....\n'
 
     return
 
@@ -468,7 +474,7 @@ def handler_app(environ, start_response):
                         status_code = 200
                         response_text = read_store(filename)
                         end = dt.datetime.now()
-                        if debug: print '(service=) time: %s' % str(end-start)
+                        if timing: print '(service=) time: %s' % str(end-start)
                         if not response_text:
                             status_code = 400
                             raise Exception('empty store for: %s' % store_path)
@@ -477,7 +483,6 @@ def handler_app(environ, start_response):
                         raise Exception('unable to locate: %s' % store_path)
 
                 except Exception, err:
-                    if debug: print 'Error: %s' % err.message
                     input_str={'Error': '%s' % err.message}
                     header = regular_header
                     r = Response(format_json(input_str))
@@ -498,7 +503,6 @@ def handler_app(environ, start_response):
                 if status_code == 200:
                     status_code = 500
                     input_str={'Error': 'error processing uframe response: %s' % err.message}
-                if debug: print 'Error: %s' % err.message
                 r = Response(format_json(input_str))
                 r.status_code = status_code
                 r.headers = regular_header
@@ -532,13 +536,12 @@ def handler_app(environ, start_response):
                             status_code = 400
                             raise Exception('unable to locate: %s' % store_path)
                         end = dt.datetime.now()
-                        if debug: print '(service=) time: %s' % str(end-start)
+                        if timing: print '(service=) time: %s' % str(end-start)
                     else:
                         status_code = 400
                         raise Exception('do not have this saved as a store: %s' % filename)
 
                 except Exception, err:
-                    if debug: print 'Error: %s' % err.message
                     input_str={'Error': '%s' % err.message}
                     header = regular_header
                     r = Response(format_json(input_str))
@@ -563,7 +566,6 @@ def handler_app(environ, start_response):
                 if status_code == 200:
                     status_code = 500
                     input_str={'Error': 'error processing uframe response: %s' % err.message}
-                if debug: print 'Error: %s' % err.message
                 r = Response(format_json(input_str))
                 r.status_code = status_code
                 r.headers = regular_header
@@ -573,7 +575,6 @@ def handler_app(environ, start_response):
         # returns json
         else:
             input_str={'Error': 'Unknown service parameter in request: \'%s\' ' % request }
-            if debug: print 'Error: Unknown service parameter in request: \'%s\' ' % request
             r = Response(format_json(input_str))
             r.status_code = 400
             r.headers = regular_header
@@ -603,7 +604,7 @@ def handler_app(environ, start_response):
                     start = dt.datetime.now()
                     response = requests.get(url,timeout=(c_uframe_timeout_connect, c_uframe_timeout_read))
                     end = dt.datetime.now()
-                    if debug: print '(uframe=) time: %s' % str(end-start)
+                    if timing: print '(uframe=) time: %s' % str(end-start)
                     if response:
                         status_code = response.status_code
                         if response.status_code != 200:
@@ -613,7 +614,6 @@ def handler_app(environ, start_response):
                         raise Exception('Failed to receive uframe response; verify config values for uframe')
 
                 except Exception, err:
-                    if debug: print 'Error: %s' % err.message
                     input_str={'Error': '%s' % err.message}
                     header = regular_header
                     r = Response(format_json(input_str))
@@ -634,8 +634,6 @@ def handler_app(environ, start_response):
                 if status_code == 200:
                     status_code = 500
                     input_str={'Error': 'error processing uframe response: %s' % err.message}
-
-                if debug: print 'Error: %s' % err.message
                 r = Response(format_json(input_str))
                 r.status_code = status_code
                 r.headers = regular_header
@@ -655,7 +653,7 @@ def handler_app(environ, start_response):
                     start = dt.datetime.now()
                     response = requests.get(url,timeout=(c_uframe_timeout_connect, c_uframe_timeout_read))
                     end = dt.datetime.now()
-                    if debug: print '(uframe=) time: %s' % str(end-start)
+                    if timing: print '(uframe=) time: %s' % str(end-start)
                     if response:
                         status_code = response.status_code
                         if response.status_code != 200:
@@ -665,7 +663,6 @@ def handler_app(environ, start_response):
                         raise Exception('Failed to receive uframe response; verify config values for uframe')
 
                 except Exception, err:
-                    if debug: print 'Error: %s' % err.message
                     input_str={'Error': '%s' % err.message}
                     header = regular_header
                     r = Response(format_json(input_str))
@@ -686,8 +683,6 @@ def handler_app(environ, start_response):
                 if status_code == 200:
                     status_code = 500
                     input_str={'Error': 'error processing uframe response: %s' % err.message}
-
-                if debug: print 'Error: %s' % err.message
                 r = Response(format_json(input_str))
                 r.status_code = status_code
                 r.headers = regular_header
@@ -697,7 +692,6 @@ def handler_app(environ, start_response):
         # returns json
         else:
             input_str={'Error': 'Unknown uframe parameter in request: \'%s\' ' % request }
-            if debug: print 'Error: Unknown uframe parameter in request: \'%s\' ' % request
             r = Response(format_json(input_str))
             r.status_code = 400
             r.headers = regular_header
@@ -706,7 +700,6 @@ def handler_app(environ, start_response):
     # key not known (e.g. not 'service=' or 'uframe=')
     else:
         input_str='{ Error: unknown key provided in request: %s } ' % request
-        if debug: print 'Error: unknown key provided in request: \'%s\' ' % request
         start_response(OK_200, CONTENT_TYPE_TEXT)
         return format_json(input_str)
 
