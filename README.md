@@ -44,6 +44,8 @@ Verify uFrame services are operational by using a web browser and navigating to:
 
 Update the muframe configuration file with host, port and base url information.
 
+Start muframe service.
+
 
 ### Running the services instance
     python muframe.py
