@@ -92,7 +92,7 @@ class handler_config():
 
 class manage_store_status():
     '''
-    helper for pre-loaded data
+    Manage data store
     '''
     _file_count = 0
     _filenames = []
@@ -110,11 +110,10 @@ class manage_store_status():
         if value:
             if value not in self._filenames:
                 self._filenames.append(value)
-
     def set_store_status(self):
         '''
         get filenames from data folder (no hidden files), populate list of filenames and update file count.
-        Useful when preload is set to False.
+        Useful when preload is set to False for verifying data folder is popoluated and manage_store_status current.
         '''
         try:
             path = c_data_root + '/' + c_data_folder
@@ -124,7 +123,6 @@ class manage_store_status():
             self._file_count = len(file_list)
         except Exception, err:
             raise Exception(err.message)
-
         return
 
 def print_config_values():
