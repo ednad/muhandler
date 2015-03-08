@@ -1,0 +1,6 @@
+multiprocessing==2.6.2.1
+gunicorn==19.2.1
+requests==2.4.3
+simplejson==3.6.5
+Werkzeug==0.9.6
+PyYAML==3.11
